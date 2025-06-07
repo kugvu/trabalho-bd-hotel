@@ -1,7 +1,88 @@
+CREATE TABLE Hospede (
+    hospede_id INT PRIMARY KEY,
+    numerohospede NVARCHAR(10) UNIQUE,
+    nome_completo NVARCHAR(100),
+    telefone NVARCHAR(20),
+    morada NVARCHAR(150)
+);
+
+CREATE TABLE Hotel (
+    hotel_id INT PRIMARY KEY,
+    nome NVARCHAR(100),
+    estrelas INT,
+    morada NVARCHAR(150),
+    cidade NVARCHAR(50),
+    pais NVARCHAR(50)
+);
+
+CREATE TABLE TipoQuarto (
+    tipo_id INT PRIMARY KEY,
+    nome NVARCHAR(50),
+    preco_diaria DECIMAL(10,2)
+);
+
+CREATE TABLE Quarto (
+    quarto_id INT PRIMARY KEY,
+    hotel_id INT,
+    numero NVARCHAR(10),
+    tipo_id INT,
+    FOREIGN KEY (hotel_id) REFERENCES Hotel(hotel_id),
+    FOREIGN KEY (tipo_id) REFERENCES TipoQuarto(tipo_id)
+);
+
+CREATE TABLE Reserva (
+    reserva_id INT PRIMARY KEY,
+    data_reserva DATE,
+    numerohospede NVARCHAR(10),
+    nome NVARCHAR(100),
+    morada NVARCHAR(150),
+    telefone NVARCHAR(20),
+    cartao_credito NVARCHAR(25),
+    hotel_id INT,
+    FOREIGN KEY (numerohospede) REFERENCES Hospede(numerohospede),
+    FOREIGN KEY (hotel_id) REFERENCES Hotel(hotel_id)
+);
+
+CREATE TABLE ReservaHospede (
+    reservahospede_id INT IDENTITY(1,1) PRIMARY KEY,
+    reserva_id INT,
+    numerohospede NVARCHAR(10),
+    quarto_id INT,
+    data_entrada DATE,
+    data_saida DATE,
+    regime NVARCHAR(50),
+    FOREIGN KEY (reserva_id) REFERENCES Reserva(reserva_id),
+    FOREIGN KEY (numerohospede) REFERENCES Hospede(numerohospede),
+    FOREIGN KEY (quarto_id) REFERENCES Quarto(quarto_id)
+);
+
+CREATE TABLE RestauranteBar (
+    restaurante_id INT PRIMARY KEY,
+    hotel_id INT,
+    nome NVARCHAR(100),
+    categoria INT,
+    tipo_refeicao NVARCHAR(50),
+    FOREIGN KEY (hotel_id) REFERENCES Hotel(hotel_id)
+);
+
+CREATE TABLE ServicoHotel (
+    servico_id INT PRIMARY KEY,
+    hotel_id INT,
+    descricao NVARCHAR(100),
+    FOREIGN KEY (hotel_id) REFERENCES Hotel(hotel_id)
+);
+
+
+
+
+
+
+
+
 -- PASSO 1: Ver os tipos de quartos disponíveis
 -- Esta consulta serve apenas para conhecer os diferentes tipos existentes
 -- e os seus respetivos IDs, nomes e preços. Isso ajudou-me a escolher o tipo 2 (Duplo)
-SELECT * FROM TipoQuarto;
+SELECT * FROM Hospede;
 
 
 
@@ -12,7 +93,7 @@ SELECT * FROM TipoQuarto;
 -- 2) Excluí os quartos que já estão ocupados nessa data
 
 SELECT q.numero
-FROM quarto q
+FROM dbo.quarto q
 WHERE q.hotel_id = 1
   AND q.tipo_id = 2
   AND q.quarto_id NOT IN (
@@ -43,7 +124,7 @@ WHERE r.categoria > 3 AND r.tipo_refeicao = 'jantar';
 SELECT h.nome_completo, h.numerohospede, rh.data_entrada, rh.data_saida, rh.regime,
        DATEDIFF(day, rh.data_entrada, rh.data_saida) * 100 AS preco_total
 FROM reservahospede rh
-JOIN hospede h ON h.hospede_id = rh.hospede_id
+JOIN hospede h ON h.numerohospede = rh.numerohospede
 WHERE rh.reserva_id = 1;
 
 
@@ -60,7 +141,7 @@ FROM hotel h
 JOIN (
     SELECT q.hotel_id,
            rh.reserva_id,
-           COUNT(DISTINCT rh.hospede_id) AS qtd_hospedes,
+           COUNT(DISTINCT rh.numerohospede) AS qtd_hospedes,
            AVG(DATEDIFF(day, rh.data_entrada, rh.data_saida)) AS dias_estadia
     FROM reservahospede rh
     JOIN quarto q ON q.quarto_id = rh.quarto_id
@@ -109,7 +190,7 @@ SELECT h.nome_completo, h.numerohospede, h.telefone, h.morada,
          WHERE rh2.reserva_id = rh.reserva_id
        ) AS acompanhantes
 FROM hospede h
-JOIN reservahospede rh ON rh.hospede_id = h.hospede_id
+JOIN reservahospede rh ON rh.numerohospede = h.numerohospede
 JOIN reserva r ON r.reserva_id = rh.reserva_id
 JOIN hotel ho ON ho.hotel_id = r.hotel_id;
 
@@ -121,7 +202,51 @@ SELECT h.nome, h.pais,
        YEAR(rh.data_entrada) AS ano,
        SUM(DATEDIFF(day, rh.data_entrada, rh.data_saida)) AS total_dormidas
 FROM reservahospede rh
-JOIN reserva r ON rh.reserva_id = r.reserva_id
+JOIN reserva r ON rh.reserva_id = r.reserva_id 
 JOIN hotel h ON r.hotel_id = h.hotel_id
 GROUP BY h.nome, h.pais, MONTH(rh.data_entrada), YEAR(rh.data_entrada)
 ORDER BY h.pais, mes, total_dormidas DESC;
+
+-- 1. Remover a foreign key de numerohospede
+ALTER TABLE ReservaHospede
+DROP CONSTRAINT FK__ReservaHo__numer__5EBF139D;
+
+-- 2. Remover a foreign key de reserva_id
+ALTER TABLE ReservaHospede
+DROP CONSTRAINT FK__ReservaHo__reser__5DCAEF64;
+
+-- 3. Remover a foreign key de quarto_id
+ALTER TABLE ReservaHospede
+DROP CONSTRAINT FK__ReservaHo__quart__5FB337D6;
+
+-- 4. Remover a PRIMARY KEY atual (reserva_id + numerohospede)
+ALTER TABLE ReservaHospede
+DROP CONSTRAINT PK__ReservaH__773CACD435DEEE53;
+
+-- 5. Remover a coluna hospede_id
+ALTER TABLE ReservaHospede
+DROP COLUMN hospede_id;
+
+-- 6. Criar nova chave primária com reservahospede_id
+ALTER TABLE ReservaHospede
+ADD CONSTRAINT PK_ReservaHospede PRIMARY KEY (reservahospede_id);
+
+-- 7. Voltar a adicionar as foreign keys necessárias
+
+-- FK de reserva_id
+ALTER TABLE ReservaHospede
+ADD CONSTRAINT FK_ReservaHospede_Reserva
+FOREIGN KEY (reserva_id) REFERENCES Reserva(reserva_id);
+
+-- FK de numerohospede
+ALTER TABLE ReservaHospede
+ADD CONSTRAINT FK_ReservaHospede_Hospede
+FOREIGN KEY (numerohospede) REFERENCES Hospede(numerohospede);
+
+-- FK de quarto_id
+ALTER TABLE ReservaHospede
+ADD CONSTRAINT FK_ReservaHospede_Quarto
+FOREIGN KEY (quarto_id) REFERENCES Quarto(quarto_id);
+
+EXEC sp_help 'ReservaHospede';
+Select * from ReservaHospede;
