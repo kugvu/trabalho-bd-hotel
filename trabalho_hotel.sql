@@ -73,7 +73,45 @@ CREATE TABLE ServicoHotel (
 );
 
 
+INSERT INTO Hospede (hospede_id, numerohospede, nome_completo, telefone, morada) VALUES 
+(1, 'H001', 'Ana Silva', '912345678', 'Rua das Flores, Porto'), 
+(2, 'H002', 'Miguel Costa', '913456789', 'Av. da Liberdade, Lisboa'), 
+(3, 'H003', 'Rita Lopes', '914567890', 'Rua Central, Braga');  
+INSERT INTO Hotel (hotel_id, nome, estrelas, morada, cidade, pais) VALUES 
+(1, 'Hotel Atlântico', 4, 'Rua das Gaivotas, 123', 'Lisboa', 'Portugal'), 
+(2, 'Hotel Estrela do Mar', 5, 'Avenida Oceano, 45', 'Porto', 'Portugal');  
+INSERT INTO TipoQuarto (tipo_id, nome, preco_diaria) VALUES 
+(1, 'Solteiro', 60.00), 
+(2, 'Duplo', 90.00), 
+(3, 'Casal', 100.00);  
+INSERT INTO Quarto (quarto_id, hotel_id, numero, tipo_id) VALUES 
+(1, 1, '101', 1), 
+(2, 1, '102', 2), 
+(3, 2, '201', 2), 
+(4, 2, '202', 3); 
+ 
+INSERT INTO Reserva (reserva_id, data_reserva, numerohospede, nome, morada, telefone, cartao_credito, hotel_id) VALUES 
+(1, '2025-06-01', 'H001', 'Ana Silva', 'Rua das Flores, Porto', '912345678', 
+'1234-5678-9012-3456', 1), 
+(2, '2025-06-02', 'H002', 'Miguel Costa', 'Av. da Liberdade, Lisboa', 
+'913456789', '9876-5432-1098-7654', 1);  
+ 
+INSERT INTO ReservaHospede (reserva_id, numerohospede, quarto_id, data_entrada, data_saida, regime) VALUES 
+(1, 'H001', 1, '2025-06-10', '2025-06-15', 'Meia-Pensão'), 
+(1, 'H003', 1, '2025-06-10', '2025-06-15', 'Meia-Pensão'), 
+(2, 'H002', 2, '2025-06-12', '2025-06-16', 'Pensão Completa');  
 
+
+INSERT INTO RestauranteBar (restaurante_id, hotel_id, nome, categoria, tipo_refeicao) VALUES 
+(1, 1, 'Restaurante Maré Alta', 4, 'jantar'), 
+(2, 1, 'Snack Bar Atlântico', 3, 'snack'), 
+(3, 2, 'Restaurante Gourmet', 5, 'almoço'), 
+(4, 2, 'Bar Piscina', 4, 'pequeno-almoço');  
+INSERT INTO ServicoHotel (servico_id, hotel_id, descricao) VALUES 
+(1, 1, 'Aluguer de viaturas'), 
+(2, 1, 'Sala de conferências'), 
+(3, 2, 'Spa & Wellness'), 
+(4, 2, 'Transfer aeroporto'); 
 
 
 
